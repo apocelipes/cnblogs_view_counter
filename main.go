@@ -64,15 +64,21 @@ func main() {
 					var ok bool
 					// timeout means there's no next-page button
 					ctx, _ = context.WithTimeout(ctx, 2*time.Second)
-					//TODO: checkout errors or ignore them
-					chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(ctx)
+					err := chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(ctx)
+					if err != nil {
+						return err
+					}
 					if !ok {
 						url = ""
 					}
 					return nil
 				}
 
-				chromedp.Nodes("#homepage_top_pager div.pager a", &nodes, chromedp.ByQueryAll).Do(ctx)
+				err := chromedp.Nodes("#homepage_top_pager div.pager a", &nodes, chromedp.ByQueryAll).Do(ctx)
+				if err != nil {
+					return err
+				}
+
 				index := -1
 				//TODO: improve searching
 				for i := range nodes {
