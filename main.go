@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -79,18 +80,14 @@ func main() {
 					return err
 				}
 
-				index := -1
-				//TODO: improve searching
-				for i := range nodes {
-					if nodes[i].Children[0].NodeValue == "下一页" {
-						index = i
-						break
-					}
+				if len(nodes) < 1 {
+					return errors.New("can not find next-page")
 				}
-				if index == -1 {
-					url = ""
+				node := nodes[len(nodes)-1]
+				if node.Children[0].NodeValue == "下一页" {
+					url = node.AttributeValue("href")
 				} else {
-					url = nodes[index].AttributeValue("href")
+					url = ""
 				}
 				pageCounter++
 				return nil
