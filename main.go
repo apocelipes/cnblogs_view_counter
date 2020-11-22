@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"time"
@@ -12,6 +13,10 @@ import (
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	c, cc := chromedp.NewExecAllocator(context.Background(),
@@ -60,8 +65,6 @@ func main() {
 			}),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				if pageCounter == 1 {
-					//TODO: remove duplicated code
-					pageCounter++
 					var ok bool
 					// timeout means there's no next-page button
 					ctx, _ = context.WithTimeout(ctx, 2*time.Second)
@@ -72,6 +75,7 @@ func main() {
 					if !ok {
 						url = ""
 					}
+					pageCounter++
 					return nil
 				}
 
@@ -96,8 +100,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//TODO: random sleep
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Duration(rand.Intn(3)+1) * time.Second)
 	}
 	close(data)
 	fmt.Println("total:", <-resChan)
