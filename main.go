@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -19,6 +20,9 @@ func init() {
 }
 
 func main() {
+	blogUserName := flag.String("user", "apocelipes", "cnblog user's name")
+	flag.Parse()
+
 	c, cc := chromedp.NewExecAllocator(context.Background(),
 		chromedp.NoDefaultBrowserCheck,
 		chromedp.NoFirstRun,
@@ -47,8 +51,8 @@ func main() {
 		}
 		resChan <- res
 	}()
-	//TODO: read user name from command line options
-	url := "https://www.cnblogs.com/apocelipes/"
+
+	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	var nodes []*cdp.Node
 	pageCounter := 1
 	for url != "" {
