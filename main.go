@@ -73,8 +73,9 @@ func main() {
 				if pageCounter == 1 {
 					var ok bool
 					// timeout means there's no next-page button
-					ctx, _ = context.WithTimeout(ctx, 2*time.Second)
-					err := chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(ctx)
+					timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 2*time.Second)
+					defer timeoutCancel()
+					err := chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(timeoutCtx)
 					if err != nil {
 						return err
 					}
