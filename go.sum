@@ -2,8 +2,8 @@ github.com/chromedp/cdproto v0.0.0-20201009231348-1c6a710e77de h1:cuPPanKjAp5XBw
 github.com/chromedp/cdproto v0.0.0-20201009231348-1c6a710e77de/go.mod h1:zx0YH7hi8sqkYXAa0LZZxpQLDsU8/a2jzbYbK79dQO8=
 github.com/chromedp/cdproto v0.0.0-20201204063249-be40c824ad18 h1:Ci3nU2yz9gRTkITWowWFTtAKYXGwbFBM6cQNoNZxH8o=
 github.com/chromedp/cdproto v0.0.0-20201204063249-be40c824ad18/go.mod h1:55pim6Ht4LJKdVLlyFJV/g++HsEA1hQxPbB5JyNdZC0=
-github.com/chromedp/chromedp v0.5.4 h1:hQC6Wj+0mBu2B+HDF4eoAyTkDo0BnL16sz3gAAmZ8fc=
-github.com/chromedp/chromedp v0.5.4/go.mod h1:Jl2gvx3U9zl4lS/dMjDVGXX0jZ4qo/vsGreqYME/lqc=
+github.com/chromedp/chromedp v0.5.5 h1:ZszBV5Kfs5BDEnd/GbxVOzC5jTa2A7gbxKzpQSsTvbU=
+github.com/chromedp/chromedp v0.5.5/go.mod h1:Jl2gvx3U9zl4lS/dMjDVGXX0jZ4qo/vsGreqYME/lqc=
 github.com/chromedp/sysutil v0.0.0-20201009230539-dc95e7e83e8a/go.mod h1:kgWmDdq8fTzXYcKIBqIYvRRTnYb9aNS9moAV0xufSww=
 github.com/chromedp/sysutil v1.0.0 h1:+ZxhTpfpZlmchB58ih/LBHX52ky7w2VhQVKQMucy3Ic=
 github.com/chromedp/sysutil v1.0.0/go.mod h1:kgWmDdq8fTzXYcKIBqIYvRRTnYb9aNS9moAV0xufSww=
@@ -22,5 +22,5 @@ github.com/mailru/easyjson v0.7.6 h1:8yTIVnZgCoiM1TgqoeTl+LfU5Jg6/xL3QhGQnimLYnA
 github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 golang.org/x/sys v0.0.0-20201202213521-69691e467435 h1:25AvDqqB9PrNqj1FLf2/70I4W0L19qqoaFq3gjNwbKk=
 golang.org/x/sys v0.0.0-20201202213521-69691e467435/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e h1:AyodaIpKjppX+cBfTASF2E1US3H2JFBj920Ot3rtDjs=
-golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201231184435-2d18734c6014 h1:joucsQqXmyBVxViHCPFjG3hx8JzIFSaym3l3MM/Jsdg=
+golang.org/x/sys v0.0.0-20201231184435-2d18734c6014/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
