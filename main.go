@@ -19,6 +19,50 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func calcViewer(data <-chan string, ret chan<- int) {
+	pattern := regexp.MustCompile(`阅读\(([0-9]+)\)`)
+	sum := 0
+	for v := range data {
+		read := pattern.FindStringSubmatch(v)[1]
+		readCounter, _ := strconv.Atoi(read)
+		sum += readCounter
+	}
+	ret <- sum
+}
+
+func getNextPageURL(url *string, currentPageIndex *int, nodes []*cdp.Node) chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		*url = ""
+		if *currentPageIndex == 1 {
+			var ok bool
+			// timeout means there's no next-page button
+			timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 2*time.Second)
+			defer timeoutCancel()
+			err := chromedp.AttributeValue("#nav_next_page a", "href", url, &ok, chromedp.ByQuery).Do(timeoutCtx)
+			if err != nil {
+				return err
+			}
+			*currentPageIndex += 1
+			return nil
+		}
+
+		err := chromedp.Nodes("#homepage_top_pager div.pager a", &nodes, chromedp.ByQueryAll).Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		if len(nodes) < 1 {
+			return errors.New("can not find next-page")
+		}
+		node := nodes[len(nodes)-1]
+		if node.Children[0].NodeValue == "下一页" {
+			*url = node.AttributeValue("href")
+		}
+		*currentPageIndex += 1
+		return nil
+	}
+}
+
 func main() {
 	blogUserName := flag.String("user", "apocelipes", "cnblog user's name")
 	flag.Parse()
@@ -41,16 +85,7 @@ func main() {
 
 	data := make(chan string, 10)
 	resChan := make(chan int)
-	go func() {
-		pattern := regexp.MustCompile(`阅读\(([0-9]+)\)`)
-		res := 0
-		for v := range data {
-			read := pattern.FindStringSubmatch(v)[1]
-			readCounter, _ := strconv.Atoi(read)
-			res += readCounter
-		}
-		resChan <- res
-	}()
+	go calcViewer(data, resChan)
 
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	var nodes []*cdp.Node
@@ -64,41 +99,11 @@ func main() {
 			chromedp.Nodes(".post-view-count", &nodes, chromedp.ByQueryAll),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				for _, v := range nodes {
-					//log.Println("node:", v.Children[0].NodeValue)
 					data <- v.Children[0].NodeValue
 				}
 				return nil
 			}),
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				url = ""
-				if pageCounter == 1 {
-					var ok bool
-					// timeout means there's no next-page button
-					timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 2*time.Second)
-					defer timeoutCancel()
-					err := chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(timeoutCtx)
-					if err != nil {
-						return err
-					}
-					pageCounter++
-					return nil
-				}
-
-				err := chromedp.Nodes("#homepage_top_pager div.pager a", &nodes, chromedp.ByQueryAll).Do(ctx)
-				if err != nil {
-					return err
-				}
-
-				if len(nodes) < 1 {
-					return errors.New("can not find next-page")
-				}
-				node := nodes[len(nodes)-1]
-				if node.Children[0].NodeValue == "下一页" {
-					url = node.AttributeValue("href")
-				}
-				pageCounter++
-				return nil
-			}),
+			getNextPageURL(&url, &pageCounter, nodes),
 		)
 		if err != nil {
 			log.Fatal(err)
