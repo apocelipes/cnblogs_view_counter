@@ -70,6 +70,7 @@ func main() {
 				return nil
 			}),
 			chromedp.ActionFunc(func(ctx context.Context) error {
+				url = ""
 				if pageCounter == 1 {
 					var ok bool
 					// timeout means there's no next-page button
@@ -78,9 +79,6 @@ func main() {
 					err := chromedp.AttributeValue("#nav_next_page a", "href", &url, &ok, chromedp.ByQuery).Do(timeoutCtx)
 					if err != nil {
 						return err
-					}
-					if !ok {
-						url = ""
 					}
 					pageCounter++
 					return nil
@@ -97,8 +95,6 @@ func main() {
 				node := nodes[len(nodes)-1]
 				if node.Children[0].NodeValue == "下一页" {
 					url = node.AttributeValue("href")
-				} else {
-					url = ""
 				}
 				pageCounter++
 				return nil
