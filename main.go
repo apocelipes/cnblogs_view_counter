@@ -111,5 +111,5 @@ func main() {
 		time.Sleep(time.Duration(rand.Intn(3)+1) * time.Second)
 	}
 	close(data)
-	fmt.Println("total:", <-resChan)
+	fmt.Printf("User: %s\ttotal view count: %v\n", *blogUserName, <-resChan)
 }
