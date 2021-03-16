@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -19,13 +20,16 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func calcViewer(data <-chan string, ret chan<- int) {
-	pattern := regexp.MustCompile(`阅读\(([0-9]+)\)`)
-	sum := 0
+type PostInfo struct {
+	Title     string
+	Date      time.Time
+	ViewCount uint64
+}
+
+func calcViewer(data <-chan PostInfo, ret chan<- uint64) {
+	var sum uint64
 	for v := range data {
-		read := pattern.FindStringSubmatch(v)[1]
-		readCounter, _ := strconv.Atoi(read)
-		sum += readCounter
+		sum += v.ViewCount
 	}
 	ret <- sum
 }
@@ -63,6 +67,16 @@ func getNextPageURL(url *string, currentPageIndex *int, nodes []*cdp.Node) chrom
 	}
 }
 
+func searchNodeByClass(arr []*cdp.Node, class string) (ret *cdp.Node) {
+	for _, node := range arr {
+		if c, ok := node.Attribute("class"); ok && (c == class) {
+			ret = node
+			return
+		}
+	}
+	return
+}
+
 func main() {
 	blogUserName := flag.String("user", "apocelipes", "cnblog user's name")
 	flag.Parse()
@@ -83,23 +97,39 @@ func main() {
 	)
 	defer cancel()
 
-	data := make(chan string, 10)
-	resChan := make(chan int)
+	data := make(chan PostInfo, 10)
+	resChan := make(chan uint64)
 	go calcViewer(data, resChan)
 
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	var nodes []*cdp.Node
 	pageCounter := 1
+	postTimePattern := regexp.MustCompile(`posted @ (\d{4}-\d{2}-\d{2}\s\d{2}:\d{2})`)
+	countPattern := regexp.MustCompile(`阅读\(([0-9]+)\)`)
 	for url != "" {
 		//TODO: progressbar
 		fmt.Println("page:", pageCounter)
 		err := chromedp.Run(ctx,
 			chromedp.Navigate(url),
-			chromedp.WaitReady(`.post-view-count`, chromedp.ByQueryAll),
-			chromedp.Nodes(".post-view-count", &nodes, chromedp.ByQueryAll),
+			chromedp.WaitReady(`.day *`, chromedp.ByQueryAll),
+			chromedp.Nodes(".day", &nodes, chromedp.ByQueryAll),
 			chromedp.ActionFunc(func(ctx context.Context) error {
-				for _, v := range nodes {
-					data <- v.Children[0].NodeValue
+				for _, post := range nodes {
+					titleNode := searchNodeByClass(post.Children, "postTitle")
+					// .postTitle > a > span > TextNode
+					title := titleNode.Children[0].Children[0].Children[0].NodeValue
+					title = strings.TrimSpace(title)
+					descNode := searchNodeByClass(post.Children, "postDesc")
+					timeStr := postTimePattern.FindStringSubmatch(descNode.Children[0].NodeValue)[1]
+					date, _ := time.Parse("2006-01-02 15:04", timeStr)
+					viewCountNode := searchNodeByClass(descNode.Children, "post-view-count")
+					countStr := countPattern.FindStringSubmatch(viewCountNode.Children[0].NodeValue)[1]
+					count, _ := strconv.ParseUint(countStr, 10, 64)
+					data <- PostInfo{
+						Title:     title,
+						Date:      date,
+						ViewCount: count,
+					}
 				}
 				return nil
 			}),
