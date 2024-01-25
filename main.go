@@ -17,10 +17,6 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 type PostInfo struct {
 	Title     string
 	Date      time.Time

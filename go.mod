@@ -1,9 +1,18 @@
 module github.com/apocelipes/cnblogs_view_counter
 
-go 1.16
+go 1.21
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20210323015217-0942afbea50e
-	github.com/chromedp/chromedp v0.6.10
-	golang.org/x/sys v0.0.0-20210324051608-47abb6519492 // indirect
+	github.com/chromedp/cdproto v0.0.0-20240116100315-4a0ec5e4c400
+	github.com/chromedp/chromedp v0.9.3
+)
+
+require (
+	github.com/chromedp/sysutil v1.0.0 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.3.2 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
+	golang.org/x/sys v0.16.0 // indirect
 )
