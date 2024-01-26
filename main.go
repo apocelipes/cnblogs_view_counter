@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -23,12 +24,15 @@ type PostInfo struct {
 	ViewCount uint64
 }
 
-func calcViewer(data <-chan PostInfo, ret chan<- uint64) {
+var wg sync.WaitGroup
+
+func calcViewer(data <-chan PostInfo, ret *atomic.Uint64) {
+	defer wg.Done()
 	var sum uint64
 	for v := range data {
 		sum += v.ViewCount
 	}
-	ret <- sum
+	ret.Swap(sum)
 }
 
 func getNextPageURL(url *string, currentPageIndex *int) chromedp.ActionFunc {
@@ -67,8 +71,6 @@ func getNextPageURL(url *string, currentPageIndex *int) chromedp.ActionFunc {
 
 var postTimePattern = regexp.MustCompile(`posted @ (\d{4}-\d{2}-\d{2}\s\d{2}:\d{2})`)
 var countPattern = regexp.MustCompile(`阅读\(([0-9]+)\)`)
-
-var wg sync.WaitGroup
 
 func parseClassDay(nodes []*cdp.Node, data chan<- PostInfo) {
 	for _, post := range nodes {
@@ -143,11 +145,12 @@ func getAllPosts(data chan<- PostInfo) chromedp.ActionFunc {
 			return errors.New("no post")
 		}
 
-		wg.Add(1)
 		switch blogPostType {
 		case PostDay:
+			wg.Add(1)
 			go parseClassDay(nodes, data)
 		case PostPost:
+			wg.Add(1)
 			go parseClassPost(nodes, data)
 		}
 
@@ -169,25 +172,26 @@ func main() {
 	blogUserName := flag.String("user", "apocelipes", "cnblog user's name")
 	flag.Parse()
 
-	c, cc := chromedp.NewExecAllocator(context.Background(),
+	ctx, cc := chromedp.NewExecAllocator(context.Background(),
 		chromedp.NoDefaultBrowserCheck,
 		chromedp.NoFirstRun,
 		chromedp.Headless,
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-extensions", true),
-		chromedp.UserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36"),
+		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
 	)
 	defer cc()
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
-		c,
+		ctx,
 		chromedp.WithLogf(log.Printf),
 	)
 	defer cancel()
 
 	data := make(chan PostInfo, 10)
-	resChan := make(chan uint64)
-	go calcViewer(data, resChan)
+	var res atomic.Uint64
+	wg.Add(1)
+	go calcViewer(data, &res)
 
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	pageCounter := 1
@@ -207,5 +211,5 @@ func main() {
 	}
 	close(data)
 	wg.Wait()
-	fmt.Printf("User: %s\ttotal view count: %v\n", *blogUserName, <-resChan)
+	fmt.Printf("User: %s\ttotal view count: %d\n", *blogUserName, res.Load())
 }
