@@ -197,7 +197,7 @@ func main() {
 	pageCounter := 1
 	for url != "" {
 		//TODO: progressbar
-		fmt.Println("page:", pageCounter)
+		fmt.Println("working on page:", pageCounter)
 		err := chromedp.Run(ctx,
 			chromedp.Navigate(url),
 			chromedp.WaitReady(`.day *, .post *`, chromedp.ByQueryAll),
@@ -211,5 +211,5 @@ func main() {
 	}
 	close(data)
 	wg.Wait()
-	fmt.Printf("User: %s\ttotal view count: %d\n", *blogUserName, res.Load())
+	fmt.Printf("\nUser: %s\nNumber of reading: %d\n", *blogUserName, res.Load())
 }
