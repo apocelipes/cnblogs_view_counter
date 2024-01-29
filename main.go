@@ -175,6 +175,7 @@ func main() {
 	ctx, cc := chromedp.NewExecAllocator(context.Background(),
 		chromedp.NoDefaultBrowserCheck,
 		chromedp.NoFirstRun,
+		chromedp.IgnoreCertErrors,
 		chromedp.Headless,
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-extensions", true),
