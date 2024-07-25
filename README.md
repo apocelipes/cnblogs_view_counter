@@ -4,5 +4,5 @@ A simple demo of chromedp.
 
 Needs:
 
-- go1.21+
+- go1.22+
 - chrome 110+

@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/rand/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -179,7 +179,7 @@ func main() {
 		chromedp.Headless,
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-extensions", true),
-		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
+		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
 	)
 	defer cc()
 	// create chrome instance
@@ -199,8 +199,14 @@ func main() {
 	for url != "" {
 		//TODO: progressbar
 		fmt.Println("working on page:", pageCounter)
-		err := chromedp.Run(ctx,
-			chromedp.Navigate(url),
+		resp, err := chromedp.RunResponse(ctx, chromedp.Navigate(url))
+		if err != nil {
+			log.Fatal(err)
+		}
+		if resp.Status != 200 {
+			log.Fatalf("request failed with status code: %d", resp.Status)
+		}
+		err = chromedp.Run(ctx,
 			chromedp.WaitReady(`.day *, .post *`, chromedp.ByQueryAll),
 			getAllPosts(data),
 			getNextPageURL(&url, &pageCounter),
@@ -208,7 +214,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		time.Sleep(time.Duration(rand.Intn(3)+1) * time.Second)
+		time.Sleep(time.Duration(rand.IntN(3)+1) * time.Second)
 	}
 	close(data)
 	wg.Wait()
