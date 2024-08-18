@@ -2,12 +2,18 @@
 
 A simple demo of chromedp.
 
-## Needs:
+## Needs
 
-- go1.22+
+- go 1.23+
 - chrome 110+
 
-## Usage:
+## Install
+
+```bash
+$ go install github.com/apocelipes/cnblogs_view_counter@latest
+```
+
+## Usage
 
 ```bash
 $ ./cnblogs_view_counter --user <user-name>
