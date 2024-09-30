@@ -9,7 +9,6 @@ import (
 	"math/rand/v2"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,26 +17,14 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type PostInfo struct {
-	Title     string
-	Date      time.Time
-	ViewCount uint64
-}
-
-var wg sync.WaitGroup
-
-func calcViewer(data <-chan PostInfo, ret *atomic.Uint64) {
-	defer wg.Done()
-	var sum uint64
-	for v := range data {
-		sum += v.ViewCount
-	}
-	ret.Swap(sum)
-}
+var (
+	wg      sync.WaitGroup
+	counter atomic.Uint64
+)
 
 func getNextPageURL(url *string, currentPageIndex *int) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
-		nodes := make([]*cdp.Node, 0)
+		var nodes []*cdp.Node
 		*url = ""
 		if *currentPageIndex == 1 {
 			var ok bool
@@ -72,36 +59,20 @@ func getNextPageURL(url *string, currentPageIndex *int) chromedp.ActionFunc {
 var postTimePattern = regexp.MustCompile(`posted @ (\d{4}-\d{2}-\d{2}\s\d{2}:\d{2})`)
 var countPattern = regexp.MustCompile(`阅读\(([0-9]+)\)`)
 
-func parseClassDay(nodes []*cdp.Node, data chan<- PostInfo) {
+func parseClassDay(nodes []*cdp.Node) {
 	for _, post := range nodes {
-		titleNode := searchNodeByClass(post.Children, "postTitle")
-		// .postTitle > a > span > TextNode
-		title := titleNode.Children[0].Children[0].Children[0].NodeValue
-		title = strings.TrimSpace(title)
 		descNode := searchNodeByClass(post.Children, "postDesc")
-		date, count := getPostMetaData(descNode)
-		data <- PostInfo{
-			Title:     title,
-			Date:      date,
-			ViewCount: count,
-		}
+		_, count := getPostMetaData(descNode)
+		counter.Add(count)
 	}
 	wg.Done()
 }
 
-func parseClassPost(nodes []*cdp.Node, data chan<- PostInfo) {
+func parseClassPost(nodes []*cdp.Node) {
 	for _, post := range nodes {
-		titleNode := post.Children[0]
-		// .postTitle > a > span > TextNode
-		title := titleNode.Children[0].Children[0].Children[0].NodeValue
-		title = strings.TrimSpace(title)
 		descNode := searchNodeByClass(post.Children, "postfoot")
-		date, count := getPostMetaData(descNode)
-		data <- PostInfo{
-			Title:     title,
-			Date:      date,
-			ViewCount: count,
-		}
+		_, count := getPostMetaData(descNode)
+		counter.Add(count)
 	}
 	wg.Done()
 }
@@ -124,10 +95,10 @@ const (
 	PostPost
 )
 
-func getAllPosts(data chan<- PostInfo) chromedp.ActionFunc {
+func getAllPosts() chromedp.ActionFunc {
 	return func(ctx context.Context) error {
 		const timeLimit = 5 * time.Second
-		nodes := make([]*cdp.Node, 0, 6)
+		var nodes []*cdp.Node
 		blogPostType := PostDay
 		timeoutCtx, timeoutCancel := context.WithTimeout(ctx, timeLimit)
 		err := chromedp.Nodes(".day", &nodes, chromedp.ByQueryAll).Do(timeoutCtx)
@@ -148,10 +119,10 @@ func getAllPosts(data chan<- PostInfo) chromedp.ActionFunc {
 		switch blogPostType {
 		case PostDay:
 			wg.Add(1)
-			go parseClassDay(nodes, data)
+			go parseClassDay(nodes)
 		case PostPost:
 			wg.Add(1)
-			go parseClassPost(nodes, data)
+			go parseClassPost(nodes)
 		}
 
 		return nil
@@ -189,11 +160,6 @@ func main() {
 	)
 	defer cancel()
 
-	data := make(chan PostInfo, 10)
-	var res atomic.Uint64
-	wg.Add(1)
-	go calcViewer(data, &res)
-
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	pageCounter := 1
 	for url != "" {
@@ -208,7 +174,7 @@ func main() {
 		}
 		err = chromedp.Run(ctx,
 			chromedp.WaitReady(`.day *, .post *`, chromedp.ByQueryAll),
-			getAllPosts(data),
+			getAllPosts(),
 			getNextPageURL(&url, &pageCounter),
 		)
 		if err != nil {
@@ -216,7 +182,6 @@ func main() {
 		}
 		time.Sleep(time.Duration(rand.IntN(3)+1) * time.Second)
 	}
-	close(data)
 	wg.Wait()
-	fmt.Printf("\nUser: %s\nNumber of reading: %d\n", *blogUserName, res.Load())
+	fmt.Printf("\nUser: %s\nNumber of reading: %d\n", *blogUserName, counter.Load())
 }
