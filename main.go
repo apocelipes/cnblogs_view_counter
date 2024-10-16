@@ -183,5 +183,5 @@ func main() {
 		time.Sleep(time.Duration(rand.IntN(3)+1) * time.Second)
 	}
 	wg.Wait()
-	fmt.Printf("\nUser: %s\nNumber of reading: %d\n", *blogUserName, counter.Load())
+	fmt.Printf("\nUser: %s\nCount of reading: %d\n", *blogUserName, counter.Load())
 }
