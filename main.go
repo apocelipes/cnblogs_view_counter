@@ -160,11 +160,16 @@ func main() {
 	)
 	defer cancel()
 
+	const userPrompt = "User"
+	const countPrompt = "Count of reading"
+	const workerPrompt = "working on page"
+	const padding = max(len(countPrompt), len(workerPrompt), len(userPrompt))
+
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	pageCounter := 1
 	for url != "" {
 		//TODO: progressbar
-		fmt.Println("working on page:", pageCounter)
+		fmt.Printf("%[1]*[2]s: %[3]d\n", padding, workerPrompt, pageCounter)
 		resp, err := chromedp.RunResponse(ctx, chromedp.Navigate(url))
 		if err != nil {
 			log.Fatal(err)
@@ -183,5 +188,7 @@ func main() {
 		time.Sleep(time.Duration(rand.IntN(3)+1) * time.Second)
 	}
 	wg.Wait()
-	fmt.Printf("\nUser: %s\nCount of reading: %d\n", *blogUserName, counter.Load())
+
+	fmt.Printf("\n%[1]*[2]s: %[3]s\n", padding, userPrompt, *blogUserName)
+	fmt.Printf("%[1]*[2]s: %[3]d\n", padding, countPrompt, counter.Load())
 }
