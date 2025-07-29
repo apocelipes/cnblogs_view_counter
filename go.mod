@@ -3,8 +3,8 @@ module github.com/apocelipes/cnblogs_view_counter
 go 1.24.5
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20250715215929-4738bcb231c7
-	github.com/chromedp/chromedp v0.13.7
+	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
+	github.com/chromedp/chromedp v0.14.0
 )
 
 require (
