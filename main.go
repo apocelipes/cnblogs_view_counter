@@ -17,10 +17,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-var (
-	wg      sync.WaitGroup
-	counter atomic.Uint64
-)
+var counter atomic.Uint64
 
 func getNextPageURL(url *string, currentPageIndex *int) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
@@ -65,7 +62,6 @@ func parseClassDay(nodes []*cdp.Node) {
 		_, count := getPostMetaData(descNode)
 		counter.Add(count)
 	}
-	wg.Done()
 }
 
 func parseClassPost(nodes []*cdp.Node) {
@@ -74,7 +70,6 @@ func parseClassPost(nodes []*cdp.Node) {
 		_, count := getPostMetaData(descNode)
 		counter.Add(count)
 	}
-	wg.Done()
 }
 
 func getPostMetaData(descNode *cdp.Node) (time.Time, uint64) {
@@ -95,7 +90,7 @@ const (
 	PostPost
 )
 
-func getAllPosts() chromedp.ActionFunc {
+func getAllPosts(wg *sync.WaitGroup) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
 		const timeLimit = 5 * time.Second
 		var nodes []*cdp.Node
@@ -118,11 +113,13 @@ func getAllPosts() chromedp.ActionFunc {
 
 		switch blogPostType {
 		case PostDay:
-			wg.Add(1)
-			go parseClassDay(nodes)
+			wg.Go(func() {
+				parseClassDay(nodes)
+			})
 		case PostPost:
-			wg.Add(1)
-			go parseClassPost(nodes)
+			wg.Go(func() {
+				parseClassPost(nodes)
+			})
 		}
 
 		return nil
@@ -167,6 +164,7 @@ func main() {
 
 	url := fmt.Sprintf("https://www.cnblogs.com/%s/", *blogUserName)
 	pageCounter := 1
+	var wg sync.WaitGroup
 	for url != "" {
 		//TODO: progressbar
 		fmt.Printf("%[1]*[2]s: %[3]d\n", padding, workerPrompt, pageCounter)
@@ -179,7 +177,7 @@ func main() {
 		}
 		err = chromedp.Run(ctx,
 			chromedp.WaitReady(`.day *, .post *`, chromedp.ByQueryAll),
-			getAllPosts(),
+			getAllPosts(&wg),
 			getNextPageURL(&url, &pageCounter),
 		)
 		if err != nil {
