@@ -4,8 +4,8 @@ A simple demo of chromedp.
 
 ## Needs
 
-- go 1.24+
-- chrome 112+
+- go 1.26+
+- chrome 130+
 
 ## Install
 
